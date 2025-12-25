@@ -42,7 +42,7 @@
         document.body.classList.add('desktop');
       }
     };
-    var mql = matchMedia("(max-width: 500px), (max-height: 500px)");
+    var mql = matchMedia("(max-width: 1024px), (max-height: 1024px)");
     setMode();
     mql.addListener(setMode);
   } else {
@@ -202,7 +202,7 @@
   });
 
   // Show gyro button on mobile
-  if (matchMedia("(max-width: 500px), (max-height: 500px)").matches) {
+  if (matchMedia("(max-width: 1024px), (max-height: 1024px)").matches) {
     gyroToggleElement.style.display = 'block';
   }
 
