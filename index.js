@@ -164,9 +164,12 @@
   controls.registerMethod('deviceOrientation', deviceOrientationControlMethod);
 
   function enableGyro() {
+    console.log("enableGyro called"); // Debug log
     deviceOrientationControlMethod.getPitch(function (err, pitch) {
       if (!err) {
         view.setPitch(pitch);
+      } else {
+        console.error("Error getting pitch:", err);
       }
     });
     controls.enableMethod('deviceOrientation');
@@ -174,6 +177,7 @@
   }
 
   function disableGyro() {
+    console.log("disableGyro called"); // Debug log
     controls.disableMethod('deviceOrientation');
     gyroToggleElement.classList.remove('enabled');
   }
@@ -187,26 +191,36 @@
   }
 
   gyroToggleElement.addEventListener('click', function () {
+    console.log("Gyro toggle clicked"); // Debug log
     // Request permission for iOS 13+ devices
     if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) === "function") {
+      console.log("Requesting DeviceMotionEvent permission"); // Debug log
       DeviceMotionEvent.requestPermission().then(response => {
+        console.log("Permission response:", response); // Debug log
         if (response === 'granted') {
           toggleGyro();
         } else {
           console.error('Device Motion permission denied.');
         }
-      }).catch(console.error);
+      }).catch(err => console.error("Permission request error:", err));
     } else {
+      console.log("Permission not required, toggling gyro"); // Debug log
       toggleGyro();
     }
   });
 
   // Show gyro button on mobile
   if (matchMedia("(max-width: 1024px), (max-height: 1024px)").matches) {
+    console.log("Mobile/Tablet detected (<=1024px)"); // Debug log
     gyroToggleElement.style.display = 'block';
     if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) !== "function") {
+      console.log("Auto-enabling gyro (non-iOS 13+)"); // Debug log
       toggleGyro();
+    } else {
+      console.log("Auto-enable skipped (DeviceMotionEvent undefined or permission required)"); // Debug log
     }
+  } else {
+    console.log("Desktop detected (>1024px), gyro disabled"); // Debug log
   }
 
   // DOM elements for view controls.
