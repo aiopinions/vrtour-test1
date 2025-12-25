@@ -221,6 +221,16 @@
   if (matchMedia("(max-width: 1024px), (max-height: 1024px)").matches) {
     console.log("Mobile/Tablet detected (<=1024px)"); // Debug log
     gyroToggleElement.style.display = 'block';
+
+    // Debug: Check if sensor events are firing at all
+    window.addEventListener("deviceorientation", function (e) {
+      if (!window.scope_gyro_debug_fired) {
+        console.log("Sensor data received:", e.alpha, e.beta, e.gamma);
+        alert("Debug: Sensor data received! " + (e.alpha ? e.alpha.toFixed(2) : 'null')); // VISUAL DEBUG
+        window.scope_gyro_debug_fired = true;
+      }
+    });
+
     if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) !== "function") {
       console.log("Auto-enabling gyro (non-iOS 13+)"); // Debug log
       toggleGyro();
