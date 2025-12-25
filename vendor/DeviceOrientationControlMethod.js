@@ -57,7 +57,7 @@ DeviceOrientationControlMethod.prototype.getPitch = function (cb) {
 
 
 DeviceOrientationControlMethod.prototype._handleData = function (data) {
-  // console.log("DeviceOrientationControlMethod _handleData", data.alpha, data.beta, data.gamma); // Debug log
+  if (data.alpha !== null) console.log("Gyro Data:", data.alpha); // Debug log active
   var previous = this._previous,
     current = this._current,
     tmp = this._tmp;

@@ -194,16 +194,16 @@
     console.log("Gyro toggle clicked"); // Debug log
     alert("Debug: Gyro clicked"); // VISUAL DEBUG
     // Request permission for iOS 13+ devices
-    if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) === "function") {
-      console.log("Requesting DeviceMotionEvent permission"); // Debug log
-      alert("Debug: Requesting Permission..."); // VISUAL DEBUG
-      DeviceMotionEvent.requestPermission().then(response => {
+    if (typeof (DeviceOrientationEvent) !== "undefined" && typeof (DeviceOrientationEvent.requestPermission) === "function") {
+      console.log("Requesting DeviceOrientationEvent permission"); // Debug log
+      alert("Debug: Requesting Permission (Orientation)..."); // VISUAL DEBUG
+      DeviceOrientationEvent.requestPermission().then(response => {
         console.log("Permission response:", response); // Debug log
         alert("Debug: Perm Response: " + response); // VISUAL DEBUG
         if (response === 'granted') {
           toggleGyro();
         } else {
-          console.error('Device Motion permission denied.');
+          console.error('Device Orientation permission denied.');
           alert("Debug: Permission Denied"); // VISUAL DEBUG
         }
       }).catch(err => {
@@ -222,16 +222,10 @@
     console.log("Mobile/Tablet detected (<=1024px)"); // Debug log
     gyroToggleElement.style.display = 'block';
 
-    // Debug: Check if sensor events are firing at all
-    window.addEventListener("deviceorientation", function (e) {
-      if (!window.scope_gyro_debug_fired) {
-        console.log("Sensor data received:", e.alpha, e.beta, e.gamma);
-        alert("Debug: Sensor data received! " + (e.alpha ? e.alpha.toFixed(2) : 'null')); // VISUAL DEBUG
-        window.scope_gyro_debug_fired = true;
-      }
-    });
+    // Debug: Check if sensor events are firing at all (Removed to reduce noise)
+    // window.addEventListener("deviceorientation", function(e) { ... });
 
-    if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) !== "function") {
+    if (typeof (DeviceOrientationEvent) !== "undefined" && typeof (DeviceOrientationEvent.requestPermission) !== "function") {
       console.log("Auto-enabling gyro (non-iOS 13+)"); // Debug log
       toggleGyro();
     } else {
