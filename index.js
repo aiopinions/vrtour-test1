@@ -192,19 +192,27 @@
 
   gyroToggleElement.addEventListener('click', function () {
     console.log("Gyro toggle clicked"); // Debug log
+    alert("Debug: Gyro clicked"); // VISUAL DEBUG
     // Request permission for iOS 13+ devices
     if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) === "function") {
       console.log("Requesting DeviceMotionEvent permission"); // Debug log
+      alert("Debug: Requesting Permission..."); // VISUAL DEBUG
       DeviceMotionEvent.requestPermission().then(response => {
         console.log("Permission response:", response); // Debug log
+        alert("Debug: Perm Response: " + response); // VISUAL DEBUG
         if (response === 'granted') {
           toggleGyro();
         } else {
           console.error('Device Motion permission denied.');
+          alert("Debug: Permission Denied"); // VISUAL DEBUG
         }
-      }).catch(err => console.error("Permission request error:", err));
+      }).catch(err => {
+        console.error("Permission request error:", err);
+        alert("Debug: Error: " + err); // VISUAL DEBUG
+      });
     } else {
       console.log("Permission not required, toggling gyro"); // Debug log
+      alert("Debug: No perm needed. Toggling."); // VISUAL DEBUG
       toggleGyro();
     }
   });
