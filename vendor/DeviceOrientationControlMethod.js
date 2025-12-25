@@ -38,7 +38,7 @@ function DeviceOrientationControlMethod() {
 Marzipano.dependencies.eventEmitter(DeviceOrientationControlMethod);
 
 
-DeviceOrientationControlMethod.prototype.destroy = function() {
+DeviceOrientationControlMethod.prototype.destroy = function () {
   this._dynamics = null;
   if (window.DeviceOrientationEvent) {
     window.removeEventListener('deviceorientation', this._deviceOrientationHandler);
@@ -51,15 +51,21 @@ DeviceOrientationControlMethod.prototype.destroy = function() {
 };
 
 
-DeviceOrientationControlMethod.prototype.getPitch = function(cb) {
+DeviceOrientationControlMethod.prototype.getPitch = function (cb) {
   this._getPitchCallbacks.push(cb);
 };
 
 
-DeviceOrientationControlMethod.prototype._handleData = function(data) {
+DeviceOrientationControlMethod.prototype._handleData = function (data) {
+  // console.log("DeviceOrientationControlMethod _handleData", data.alpha, data.beta, data.gamma); // Debug log
   var previous = this._previous,
-      current = this._current,
-      tmp = this._tmp;
+    current = this._current,
+    tmp = this._tmp;
+
+  if (data.alpha === null || data.beta === null || data.gamma === null) {
+    // console.log("Skipping null orientation data");
+    return;
+  }
 
   tmp.yaw = Marzipano.util.degToRad(data.alpha);
   tmp.pitch = Marzipano.util.degToRad(data.beta);
@@ -68,7 +74,7 @@ DeviceOrientationControlMethod.prototype._handleData = function(data) {
   rotateEuler(tmp, current);
 
   // Report current pitch value.
-  this._getPitchCallbacks.forEach(function(callback) {
+  this._getPitchCallbacks.forEach(function (callback) {
     callback(null, current.pitch);
   });
   this._getPitchCallbacks.length = 0;
@@ -102,33 +108,30 @@ function rotateEuler(euler, result) {
     sb = Math.sin(euler.roll),
 
     matrix = [
-      sh*sb - ch*sa*cb,   -ch*ca,    ch*sa*sb + sh*cb,
-      ca*cb,              -sa,      -ca*sb,
-      sh*sa*cb + ch*sb,    sh*ca,   -sh*sa*sb + ch*cb
+      sh * sb - ch * sa * cb, -ch * ca, ch * sa * sb + sh * cb,
+      ca * cb, -sa, -ca * sb,
+      sh * sa * cb + ch * sb, sh * ca, -sh * sa * sb + ch * cb
     ]; // Includes 90-degree rotation around z axis
 
   /* [m00 m01 m02] 0 1 2
    * [m10 m11 m12] 3 4 5
    * [m20 m21 m22] 6 7 8 */
 
-  if (matrix[3] > 0.9999)
-  {
+  if (matrix[3] > 0.9999) {
     // Deal with singularity at north pole
-    heading = Math.atan2(matrix[2],matrix[8]);
-    attitude = Math.PI/2;
+    heading = Math.atan2(matrix[2], matrix[8]);
+    attitude = Math.PI / 2;
     bank = 0;
   }
-  else if (matrix[3] < -0.9999)
-  {
+  else if (matrix[3] < -0.9999) {
     // Deal with singularity at south pole
-    heading = Math.atan2(matrix[2],matrix[8]);
-    attitude = -Math.PI/2;
+    heading = Math.atan2(matrix[2], matrix[8]);
+    attitude = -Math.PI / 2;
     bank = 0;
   }
-  else
-  {
-    heading = Math.atan2(-matrix[6],matrix[0]);
-    bank = Math.atan2(-matrix[5],matrix[4]);
+  else {
+    heading = Math.atan2(-matrix[6], matrix[0]);
+    bank = Math.atan2(-matrix[5], matrix[4]);
     attitude = Math.asin(matrix[3]);
   }
 
