@@ -15,7 +15,7 @@
  */
 'use strict';
 
-(function() {
+(function () {
   var Marzipano = window.Marzipano;
   var bowser = window.bowser;
   var screenfull = window.screenfull;
@@ -29,10 +29,11 @@
   var sceneListToggleElement = document.querySelector('#sceneListToggle');
   var autorotateToggleElement = document.querySelector('#autorotateToggle');
   var fullscreenToggleElement = document.querySelector('#fullscreenToggle');
+  var gyroToggleElement = document.querySelector('#gyroToggle');
 
   // Detect desktop or mobile mode.
   if (window.matchMedia) {
-    var setMode = function() {
+    var setMode = function () {
       if (mql.matches) {
         document.body.classList.remove('desktop');
         document.body.classList.add('mobile');
@@ -50,7 +51,7 @@
 
   // Detect whether we are on a touch device.
   document.body.classList.add('no-touch');
-  window.addEventListener('touchstart', function() {
+  window.addEventListener('touchstart', function () {
     document.body.classList.remove('no-touch');
     document.body.classList.add('touch');
   });
@@ -71,14 +72,14 @@
   var viewer = new Marzipano.Viewer(panoElement, viewerOpts);
 
   // Create scenes.
-  var scenes = data.scenes.map(function(data) {
+  var scenes = data.scenes.map(function (data) {
     var urlPrefix = "tiles";
     var source = Marzipano.ImageUrlSource.fromString(
       urlPrefix + "/" + data.id + "/{z}/{f}/{y}/{x}.jpg",
       { cubeMapPreviewUrl: urlPrefix + "/" + data.id + "/preview.jpg" });
     var geometry = new Marzipano.CubeGeometry(data.levels);
 
-    var limiter = Marzipano.RectilinearView.limit.traditional(data.faceSize, 100*Math.PI/180, 120*Math.PI/180);
+    var limiter = Marzipano.RectilinearView.limit.traditional(data.faceSize, 100 * Math.PI / 180, 120 * Math.PI / 180);
     var view = new Marzipano.RectilinearView(data.initialViewParameters, limiter);
 
     var scene = viewer.createScene({
@@ -89,13 +90,13 @@
     });
 
     // Create link hotspots.
-    data.linkHotspots.forEach(function(hotspot) {
+    data.linkHotspots.forEach(function (hotspot) {
       var element = createLinkHotspotElement(hotspot);
       scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
     });
 
     // Create info hotspots.
-    data.infoHotspots.forEach(function(hotspot) {
+    data.infoHotspots.forEach(function (hotspot) {
       var element = createInfoHotspotElement(hotspot);
       scene.hotspotContainer().createHotspot(element, { yaw: hotspot.yaw, pitch: hotspot.pitch });
     });
@@ -111,7 +112,7 @@
   var autorotate = Marzipano.autorotate({
     yawSpeed: 0.03,
     targetPitch: 0,
-    targetFov: Math.PI/2
+    targetFov: Math.PI / 2
   });
   if (data.settings.autorotateEnabled) {
     autorotateToggleElement.classList.add('enabled');
@@ -123,10 +124,10 @@
   // Set up fullscreen mode, if supported.
   if (screenfull.enabled && data.settings.fullscreenButton) {
     document.body.classList.add('fullscreen-enabled');
-    fullscreenToggleElement.addEventListener('click', function() {
+    fullscreenToggleElement.addEventListener('click', function () {
       screenfull.toggle();
     });
-    screenfull.on('change', function() {
+    screenfull.on('change', function () {
       if (screenfull.isFullscreen) {
         fullscreenToggleElement.classList.add('enabled');
       } else {
@@ -146,9 +147,9 @@
   }
 
   // Set handler for scene switch.
-  scenes.forEach(function(scene) {
+  scenes.forEach(function (scene) {
     var el = document.querySelector('#sceneList .scene[data-id="' + scene.data.id + '"]');
-    el.addEventListener('click', function() {
+    el.addEventListener('click', function () {
       switchScene(scene);
       // On mobile, hide scene list after selecting a scene.
       if (document.body.classList.contains('mobile')) {
@@ -156,6 +157,54 @@
       }
     });
   });
+
+  // Set up gyroscope control ControlMethod if on mobile
+  var deviceOrientationControlMethod = new DeviceOrientationControlMethod();
+  var controls = viewer.controls(); // Need this earlier
+  controls.registerMethod('deviceOrientation', deviceOrientationControlMethod);
+
+  function enableGyro() {
+    deviceOrientationControlMethod.getPitch(function (err, pitch) {
+      if (!err) {
+        view.setPitch(pitch);
+      }
+    });
+    controls.enableMethod('deviceOrientation');
+    gyroToggleElement.classList.add('enabled');
+  }
+
+  function disableGyro() {
+    controls.disableMethod('deviceOrientation');
+    gyroToggleElement.classList.remove('enabled');
+  }
+
+  function toggleGyro() {
+    if (gyroToggleElement.classList.contains('enabled')) {
+      disableGyro();
+    } else {
+      enableGyro();
+    }
+  }
+
+  gyroToggleElement.addEventListener('click', function () {
+    // Request permission for iOS 13+ devices
+    if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) === "function") {
+      DeviceMotionEvent.requestPermission().then(response => {
+        if (response === 'granted') {
+          toggleGyro();
+        } else {
+          console.error('Device Motion permission denied.');
+        }
+      }).catch(console.error);
+    } else {
+      toggleGyro();
+    }
+  });
+
+  // Show gyro button on mobile
+  if (matchMedia("(max-width: 500px), (max-height: 500px)").matches) {
+    gyroToggleElement.style.display = 'block';
+  }
 
   // DOM elements for view controls.
   var viewUpElement = document.querySelector('#viewUp');
@@ -170,13 +219,13 @@
   var friction = 3;
 
   // Associate view controls with elements.
-  var controls = viewer.controls();
-  controls.registerMethod('upElement',    new Marzipano.ElementPressControlMethod(viewUpElement,     'y', -velocity, friction), true);
-  controls.registerMethod('downElement',  new Marzipano.ElementPressControlMethod(viewDownElement,   'y',  velocity, friction), true);
-  controls.registerMethod('leftElement',  new Marzipano.ElementPressControlMethod(viewLeftElement,   'x', -velocity, friction), true);
-  controls.registerMethod('rightElement', new Marzipano.ElementPressControlMethod(viewRightElement,  'x',  velocity, friction), true);
-  controls.registerMethod('inElement',    new Marzipano.ElementPressControlMethod(viewInElement,  'zoom', -velocity, friction), true);
-  controls.registerMethod('outElement',   new Marzipano.ElementPressControlMethod(viewOutElement, 'zoom',  velocity, friction), true);
+  // var controls = viewer.controls(); // Moved up
+  controls.registerMethod('upElement', new Marzipano.ElementPressControlMethod(viewUpElement, 'y', -velocity, friction), true);
+  controls.registerMethod('downElement', new Marzipano.ElementPressControlMethod(viewDownElement, 'y', velocity, friction), true);
+  controls.registerMethod('leftElement', new Marzipano.ElementPressControlMethod(viewLeftElement, 'x', -velocity, friction), true);
+  controls.registerMethod('rightElement', new Marzipano.ElementPressControlMethod(viewRightElement, 'x', velocity, friction), true);
+  controls.registerMethod('inElement', new Marzipano.ElementPressControlMethod(viewInElement, 'zoom', -velocity, friction), true);
+  controls.registerMethod('outElement', new Marzipano.ElementPressControlMethod(viewOutElement, 'zoom', velocity, friction), true);
 
   function sanitize(s) {
     return s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;');
@@ -257,14 +306,14 @@
     icon.classList.add('link-hotspot-icon');
 
     // Set rotation transform.
-    var transformProperties = [ '-ms-transform', '-webkit-transform', 'transform' ];
+    var transformProperties = ['-ms-transform', '-webkit-transform', 'transform'];
     for (var i = 0; i < transformProperties.length; i++) {
       var property = transformProperties[i];
       icon.style[property] = 'rotate(' + hotspot.rotation + 'rad)';
     }
 
     // Add click event handler.
-    wrapper.addEventListener('click', function() {
+    wrapper.addEventListener('click', function () {
       switchScene(findSceneById(hotspot.target));
     });
 
@@ -339,7 +388,7 @@
     modal.classList.add('info-hotspot-modal');
     document.body.appendChild(modal);
 
-    var toggle = function() {
+    var toggle = function () {
       wrapper.classList.toggle('visible');
       modal.classList.toggle('visible');
     };
@@ -359,10 +408,10 @@
 
   // Prevent touch and scroll events from reaching the parent element.
   function stopTouchAndScrollEventPropagation(element, eventList) {
-    var eventList = [ 'touchstart', 'touchmove', 'touchend', 'touchcancel',
-                      'wheel', 'mousewheel' ];
+    var eventList = ['touchstart', 'touchmove', 'touchend', 'touchcancel',
+      'wheel', 'mousewheel'];
     for (var i = 0; i < eventList.length; i++) {
-      element.addEventListener(eventList[i], function(event) {
+      element.addEventListener(eventList[i], function (event) {
         event.stopPropagation();
       });
     }
