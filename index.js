@@ -204,6 +204,9 @@
   // Show gyro button on mobile
   if (matchMedia("(max-width: 1024px), (max-height: 1024px)").matches) {
     gyroToggleElement.style.display = 'block';
+    if (typeof (DeviceMotionEvent) !== "undefined" && typeof (DeviceMotionEvent.requestPermission) !== "function") {
+      toggleGyro();
+    }
   }
 
   // DOM elements for view controls.
